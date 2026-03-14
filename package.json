@@ -1,0 +1,16 @@
+{
+  "name": "synthesis-truststack",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "node --check apps/agent-core/src/guardrails.js && node --check packages/receipt-sdk/src/receiptLedger.js",
+    "test": "node --test apps/agent-core/src/guardrails.test.js packages/receipt-sdk/src/receiptLedger.test.js",
+    "typecheck": "node scripts/assert-ai-first-structure.mjs",
+    "check": "npm run lint && npm run test && npm run typecheck"
+  }
+}
