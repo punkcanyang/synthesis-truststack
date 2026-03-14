@@ -4,7 +4,7 @@
 - [x] Implement Spending Guardrails module with explicit policy checks.
 - [x] Implement Receipt Ledger module with hash-chain receipts.
 - [x] Add executable tests for guardrail decisions and chain tamper detection.
-- [ ] Build end-to-end CLI flow: request -> guard -> execute(simulated) -> receipt output.
+- [x] Build end-to-end CLI flow: request -> guard -> execute(simulated) -> receipt output.
 
 ## P1 - Submission readiness
 - [ ] Implement Submission Autopilot generator (README/demo/changelog bundle).

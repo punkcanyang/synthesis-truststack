@@ -1,0 +1,54 @@
+{
+  "scenario1": {
+    "request": {
+      "requestId": "req-allow-001",
+      "amountUsd": 75,
+      "recipient": "wallet:ops"
+    },
+    "decision": {
+      "allowed": true,
+      "reason": "ALLOWED",
+      "violations": []
+    },
+    "execution": "executed"
+  },
+  "scenario2": {
+    "request": {
+      "requestId": "req-block-001",
+      "amountUsd": 180,
+      "recipient": "wallet:ops"
+    },
+    "decision": {
+      "allowed": false,
+      "reason": "BLOCKED_LIMIT",
+      "violations": [
+        "amount exceeds perTxLimitUsd"
+      ]
+    },
+    "execution": "blocked"
+  },
+  "chainCheck": {
+    "ok": true,
+    "firstBrokenIndex": -1
+  },
+  "receipts": [
+    {
+      "id": "req-allow-001",
+      "ts": "2026-03-14T14:42:15.036Z",
+      "action": "spend",
+      "status": "executed",
+      "reason": "ALLOWED",
+      "prevHash": "GENESIS",
+      "hash": "d350225fa07de5a2117c9f59326e2cbdd7dee0ee313028c7f2890563fdb4f680"
+    },
+    {
+      "id": "req-block-001",
+      "ts": "2026-03-14T14:42:15.037Z",
+      "action": "spend",
+      "status": "blocked",
+      "reason": "BLOCKED_LIMIT",
+      "prevHash": "d350225fa07de5a2117c9f59326e2cbdd7dee0ee313028c7f2890563fdb4f680",
+      "hash": "4510ec1471232fff5468ccff8aaee39e6990d2efa1fc8c5c674fa056bb4142ef"
+    }
+  ]
+}
