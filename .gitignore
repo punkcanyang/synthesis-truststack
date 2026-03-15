@@ -6,3 +6,14 @@ coverage/
 !.env.example
 .secrets/
 *.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

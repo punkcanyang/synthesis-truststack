@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { evaluateSpendRequest } from './guardrails.js';
-import { createReceipt, verifyChain } from '../../../packages/receipt-sdk/src/receiptLedger.js';
+import { createReceipt, verifyChain } from 'receipt-sdk';
 
 /**
  * __ai_context__

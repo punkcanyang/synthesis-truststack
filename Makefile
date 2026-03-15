@@ -3,4 +3,5 @@ check:
 	npm run check
 
 .PHONY: demo
-	echo "TODO: run demo flow"
+demo:
+	npm run demo

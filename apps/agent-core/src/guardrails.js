@@ -21,7 +21,7 @@
 /**
  * @typedef {Object} GuardDecision
  * @property {boolean} allowed
- * @property {'ALLOWED'|'BLOCKED_LIMIT'|'BLOCKED_RECIPIENT'} reason
+ * @property {'ALLOWED'|'BLOCKED_LIMIT'|'BLOCKED_RECIPIENT'|'BLOCKED_MULTIPLE'} reason
  * @property {string[]} violations
  */
 
@@ -73,8 +73,16 @@ export function evaluateSpendRequest(policy, request) {
   const recipientAllowed = policy.recipientAllowlist.includes(request.recipient);
   if (!recipientAllowed) violations.push('recipient not in allowlist');
 
-  if (exceedsLimit) return { allowed: false, reason: 'BLOCKED_LIMIT', violations };
-  if (!recipientAllowed) return { allowed: false, reason: 'BLOCKED_RECIPIENT', violations };
+  // WHY: 多个违规时返回 BLOCKED_MULTIPLE 确保 reason 与 violations 语义一致
+  if (violations.length > 0) {
+    let reason = 'BLOCKED_LIMIT';
+    if (exceedsLimit && !recipientAllowed) {
+      reason = 'BLOCKED_MULTIPLE';
+    } else if (!recipientAllowed) {
+      reason = 'BLOCKED_RECIPIENT';
+    }
+    return { allowed: false, reason, violations };
+  }
 
   return { allowed: true, reason: 'ALLOWED', violations };
 }
@@ -84,9 +92,11 @@ export function evaluateSpendRequest(policy, request) {
 1. Key assumptions made:
    - Amount uses USD units and is compared directly against perTxLimitUsd.
    - Recipient identity is exact-string matched against allowlist.
+   - When both limit and recipient violations occur, reason is BLOCKED_MULTIPLE.
 2. Potential edge cases to watch:
    - Floating-point rounding if integrating token decimals.
    - Recipient normalization (checksum addresses, case sensitivity).
+   - Multiple violations are collected in violations array regardless of reason code.
 3. Dependencies on other modules:
    - Consumed by execution orchestrator in app layer.
    - Decision output should be persisted by receipt ledger module.
