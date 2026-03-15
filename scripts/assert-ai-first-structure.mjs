@@ -3,6 +3,7 @@ import fs from 'node:fs';
 const filesToCheck = [
   'apps/agent-core/src/guardrails.js',
   'apps/agent-core/src/demoCli.js',
+  'apps/agent-core/src/submissionAutopilot.js',
   'packages/receipt-sdk/src/receiptLedger.js'
 ];
 

@@ -7,9 +7,9 @@
 - [x] Build end-to-end CLI flow: request -> guard -> execute(simulated) -> receipt output.
 
 ## P1 - Submission readiness
-- [ ] Implement Submission Autopilot generator (README/demo/changelog bundle).
-- [ ] Add one-command demo script (`npm run demo`).
-- [ ] Produce demo transcript artifact under `docs/demo/`.
+- [x] Implement Submission Autopilot generator (README/demo/changelog bundle).
+- [x] Add one-command demo script (`npm run demo`).
+- [x] Produce demo transcript artifact under `docs/demo/`.
 
 ## P2 - Reputation Passport
 - [ ] Define reputation score inputs from receipt history.
