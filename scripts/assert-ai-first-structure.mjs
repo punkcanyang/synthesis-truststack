@@ -4,6 +4,7 @@ const filesToCheck = [
   'apps/agent-core/src/guardrails.js',
   'apps/agent-core/src/demoCli.js',
   'apps/agent-core/src/submissionAutopilot.js',
+  'apps/agent-core/src/reputationScore.js',
   'packages/receipt-sdk/src/receiptLedger.js'
 ];
 
