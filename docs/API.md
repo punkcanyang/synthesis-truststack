@@ -80,7 +80,7 @@ const decision = evaluateSpendRequest(policy, request);
 ## Receipt Ledger / 收据账本
 
 **Module Path / 模块路径**: `packages/receipt-sdk/src/receiptLedger.js`
-**Package Name / 包名**: `receipt-sdk`
+**Package Name / 包名**: `@truststack/receipt-sdk`
 
 ### `createReceipt(prevHash, id, action, status, reason) → ReceiptRecord`
 
@@ -115,7 +115,7 @@ Create a new hash-linked receipt.
 **Usage Example / 使用示例**:
 
 ```javascript
-import { createReceipt, verifyChain } from 'receipt-sdk';
+import { createReceipt, verifyChain } from '@truststack/receipt-sdk';
 
 // Create first receipt (chain starts from GENESIS)
 // 创建第一条收据 (从 GENESIS 开始)
