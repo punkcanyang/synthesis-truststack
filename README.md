@@ -45,6 +45,7 @@ In the AI Agent era, agents execute real-world actions on behalf of users — tr
 1. **Spending Guardrails / 消费护栏** — Validates requests against human-defined policies (per-tx limit + recipient allowlist) before any action executes / 在任何操作执行前，根据人类设定的策略（单笔限额 + 收件人白名单）进行合规检查
 2. **Receipt Ledger / 收据账本** — Creates SHA-256 hash-linked receipts for every decision and execution; any tampering is detectable / 为每次决策和执行创建 SHA-256 哈希链式收据，任何篡改都可被检测
 3. **Submission Autopilot / 提交自动驾驶仪** — Automatically packages demo evidence into structured submission artifacts / 将演示证据自动打包为结构化提交产物
+4. **On-Chain Anchor / 链上锚定** — Anchors receipt root to EVM testnet tx payload and verifies anchored root against local report / 将收据根锚定到 EVM 测试网交易载荷，并对比本地报告完成验证
 
 ---
 
@@ -92,6 +93,22 @@ npm run demo
 npm run bundle
 ```
 
+### On-Chain Anchor (EVM) / 链上锚定（EVM）
+
+```bash
+# 1) Anchor root to chain (requires unlocked sender account on RPC node)
+# 1) 将 root 写入链上（RPC 节点需支持已解锁账户）
+TRUSTSTACK_RPC_URL=https://your-testnet-rpc \
+TRUSTSTACK_ANCHOR_FROM=0xYourSenderAddress \
+npm run anchor
+
+# 2) Verify tx payload root against local demo report
+# 2) 用本地 demo 报告校验链上交易载荷中的 root
+TRUSTSTACK_RPC_URL=https://your-testnet-rpc \
+TRUSTSTACK_ANCHOR_TX_HASH=0xYourTxHash \
+npm run verify-anchor
+```
+
 ---
 
 ## Project Structure / 项目结构
@@ -107,7 +124,9 @@ synthesis-truststack/
 │           ├── demoCli.js           # E2E demo CLI / 端到端演示 CLI
 │           ├── demoCli.test.js      # Demo test (1 case) / 演示测试 (1 个用例)
 │           ├── submissionAutopilot.js     # Submission bundle generator / 提交包生成器
-│           └── submissionAutopilot.test.js # Submission test (1 case) / 提交测试 (1 个用例)
+│           ├── submissionAutopilot.test.js # Submission test (1 case) / 提交测试 (1 个用例)
+│           ├── onchainAnchor.js     # EVM anchor + verify module / EVM 锚定与验证模块
+│           └── onchainAnchor.test.js # On-chain anchor tests / 链上锚定测试
 ├── packages/
 │   └── receipt-sdk/                 # Receipt SDK package / 收据 SDK 包
 │       ├── package.json             # Workspace package definition / workspace 包定义
@@ -143,6 +162,8 @@ synthesis-truststack/
 | `npm run typecheck` | AI-First structure compliance check / AI-First 结构合规检查 |
 | `npm run demo` | Execute E2E demo flow / 执行端到端演示流程 |
 | `npm run bundle` | Generate submission bundle / 生成提交包 |
+| `npm run anchor` | Anchor receipt root to EVM tx payload / 将收据根写入 EVM 交易载荷 |
+| `npm run verify-anchor` | Verify anchored root vs local report / 校验链上 root 与本地报告是否一致 |
 | `make check` | Makefile shortcut / Makefile 快捷方式 |
 | `make demo` | Makefile shortcut / Makefile 快捷方式 |
 
@@ -193,10 +214,8 @@ See [`docs/AI_FIRST_RULES.md`](docs/AI_FIRST_RULES.md) for full details. Key poi
 ### ✅ Completed / 已完成
 - P0: Spending Guardrails + Receipt Ledger + E2E Demo / 消费护栏 + 收据账本 + 端到端演示
 - P1: Submission Autopilot + One-command Demo / 提交自动驾驶仪 + 一键演示
-
-### 🔲 Planned / 计划中
 - P2: Reputation Passport — Compute explainable trust scores from receipt history / 声誉护照 — 从收据历史中计算可解释的信誉分数
-- P3: On-Chain Anchoring — Anchor receipt root hash to testnet / 链上锚定 — 将收据根哈希锚定到测试网
+- P3: On-Chain Anchoring (v1) — Anchor receipt root into EVM tx payload + verifier script / 链上锚定（v1）— 将收据根写入 EVM 交易载荷并提供验证脚本
 
 ---
 

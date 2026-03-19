@@ -34,21 +34,21 @@
   "receipts": [
     {
       "id": "req-allow-001",
-      "ts": "2026-03-14T14:42:15.036Z",
+      "ts": "2026-03-19T03:16:47.888Z",
       "action": "spend",
       "status": "executed",
       "reason": "ALLOWED",
       "prevHash": "GENESIS",
-      "hash": "d350225fa07de5a2117c9f59326e2cbdd7dee0ee313028c7f2890563fdb4f680"
+      "hash": "dc3c4b1a8adf7a57c179777703e777e5d20874bda83fd5306b3072fb4d5f3d0b"
     },
     {
       "id": "req-block-001",
-      "ts": "2026-03-14T14:42:15.037Z",
+      "ts": "2026-03-19T03:16:47.888Z",
       "action": "spend",
       "status": "blocked",
       "reason": "BLOCKED_LIMIT",
-      "prevHash": "d350225fa07de5a2117c9f59326e2cbdd7dee0ee313028c7f2890563fdb4f680",
-      "hash": "4510ec1471232fff5468ccff8aaee39e6990d2efa1fc8c5c674fa056bb4142ef"
+      "prevHash": "dc3c4b1a8adf7a57c179777703e777e5d20874bda83fd5306b3072fb4d5f3d0b",
+      "hash": "f144880dc18af56e8875bcb0d347562dabfc6fedc1598d56f2455d98a074cacf"
     }
   ]
 }

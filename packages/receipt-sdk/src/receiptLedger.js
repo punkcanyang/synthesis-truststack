@@ -117,6 +117,22 @@ export function verifyChain(receipts) {
   return { ok: true, firstBrokenIndex: -1 };
 }
 
+/**
+ * WHY: v1 链上锚定使用收据链的末条 hash 作为根，先确保链完整性再输出 root。
+ * @param {ReceiptRecord[]} receipts
+ * @returns {string}
+ */
+export function computeReceiptRoot(receipts) {
+  if (!Array.isArray(receipts)) throw new Error('receipts must be an array');
+  if (receipts.length === 0) return 'GENESIS';
+
+  const chainCheck = verifyChain(receipts);
+  if (!chainCheck.ok) {
+    throw new Error(`invalid receipt chain at index ${chainCheck.firstBrokenIndex}`);
+  }
+  return receipts[receipts.length - 1].hash;
+}
+
 /*
 [For Future AI]
 1. Key assumptions made:

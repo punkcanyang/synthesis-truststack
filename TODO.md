@@ -17,5 +17,5 @@
 - [x] Add tests for score stability and edge cases.
 
 ## P3 - Optional on-chain extension
-- [ ] Anchor receipt root hash on-chain (testnet).
-- [ ] Add verifier script for anchored root vs local receipts.
+- [x] Anchor receipt root hash on-chain (testnet).
+- [x] Add verifier script for anchored root vs local receipts.

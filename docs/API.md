@@ -239,3 +239,77 @@ Generate submission bundle from demo report.
 
 **Error Behavior / 异常行为**:
 - Demo report not found → throws `Error('Demo report not found at: ...')` / 报告不存在则抛出异常
+
+---
+
+### `computeReceiptRoot(receipts) → string`
+
+Compute anchor root from a validated receipt chain (v1: use last receipt hash).
+
+从合法收据链计算锚定根（v1：使用末条收据 hash）。
+
+**Parameters / 参数**:
+
+| Param / 参数 | Type / 类型 | Description / 说明 |
+|------|------|------|
+| `receipts` | `ReceiptRecord[]` | Receipts in chronological order / 按时间顺序排列的收据 |
+
+**Returns / 返回值**:
+- Non-empty chain: last receipt `hash` / 非空链：末条收据 `hash`
+- Empty chain: `'GENESIS'` / 空链：`'GENESIS'`
+
+**Error Behavior / 异常行为**:
+- Non-array input → throws `Error('receipts must be an array')` / 非数组输入抛异常
+- Invalid chain → throws `Error('invalid receipt chain at index ...')` / 非法链抛异常
+
+---
+
+## On-Chain Anchor / 链上锚定
+
+**Module Path / 模块路径**: `apps/agent-core/src/onchainAnchor.js`
+
+### `anchorRootFromDemoReport(options) → Promise<{ root, txHash, chainId, blockNumber }>`
+
+Read local demo report, compute receipt root, and anchor root into EVM transaction payload.
+
+读取本地 demo 报告、计算收据根，并将该 root 写入 EVM 交易载荷。
+
+**Key Options / 关键参数**:
+
+| Field / 字段 | Type / 类型 | Required / 必填 | Description / 说明 |
+|------|------|------|------|
+| `rpcUrl` | `string` | yes | JSON-RPC endpoint / JSON-RPC 节点地址 |
+| `from` | `string` | yes | Sender address for `eth_sendTransaction` / `eth_sendTransaction` 发送地址 |
+| `demoReportPath` | `string` | no | Path to demo report / demo 报告路径 |
+| `to` | `string` | no | Receiver address (default: `from`) / 接收地址（默认同 `from`） |
+| `gas` | `string` | no | Hex gas value / 十六进制 gas 值 |
+| `timeoutMs` | `number` | no | Receipt wait timeout / 等待回执超时 |
+
+**Error Behavior / 异常行为**:
+- Missing `rpcUrl` or `from` → throws / 缺少关键参数抛异常
+- Empty receipt chain → throws `Error('cannot anchor empty receipt chain')` / 空链不可锚定
+- RPC failure / timeout → throws / RPC 失败或超时抛异常
+
+### `verifyAnchoredRoot(options) → Promise<{ ok, txHash, expectedRoot, anchoredRoot, blockNumber }>`
+
+Compare local computed root with anchored root parsed from on-chain transaction payload.
+
+将本地计算 root 与链上交易载荷解析出的 root 做一致性对比。
+
+**Key Options / 关键参数**:
+
+| Field / 字段 | Type / 类型 | Required / 必填 | Description / 说明 |
+|------|------|------|------|
+| `rpcUrl` | `string` | yes | JSON-RPC endpoint / JSON-RPC 节点地址 |
+| `txHash` | `string` | yes | Anchoring transaction hash / 锚定交易哈希 |
+| `demoReportPath` | `string` | no | Path to demo report / demo 报告路径 |
+
+**Return Semantics / 返回语义**:
+- `ok = true`: roots match / 根一致
+- `ok = false`: roots mismatch or payload not in TrustStack anchor format / 根不一致或载荷非 TrustStack 锚定格式
+
+### `buildAnchorData(rootHex) / extractRootFromAnchorData(dataHex)`
+
+Utility helpers for deterministic payload encoding/decoding:
+- `buildAnchorData`: `0x` + `"TRUSTSTACK_ROOT:"`(hex) + `root(32-byte hex)`
+- `extractRootFromAnchorData`: parse root from payload / 从载荷解析 root

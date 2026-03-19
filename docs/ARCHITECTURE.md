@@ -1,6 +1,6 @@
 # System Architecture / 系统架构详解
 
-> **Version / 版本**: v0.1 | **Updated / 更新日期**: 2026-03-15
+> **Version / 版本**: v0.1 | **Updated / 更新日期**: 2026-03-19
 
 ---
 
@@ -77,17 +77,21 @@ The diagram below shows the complete lifecycle of an Agent action request, from 
 graph TD
     A[demoCli.js<br/>E2E Demo / 端到端演示] --> B[guardrails.js<br/>Guardrails / 消费护栏]
     A --> C[receiptLedger.js<br/>Receipt Ledger / 收据账本]
+    G[onchainAnchor.js<br/>On-Chain Anchor / 链上锚定] --> C
+    G --> E[demo-report.json<br/>Demo Artifact / 演示产物]
     D[submissionAutopilot.js<br/>Submission / 提交打包] --> E[demo-report.json<br/>Demo Artifact / 演示产物]
     A -.->|generates / 生成| E
     F[assert-ai-first-structure.mjs<br/>Compliance Check / 规范检查] -.->|scans / 扫描| B
     F -.->|scans / 扫描| A
     F -.->|scans / 扫描| D
+    F -.->|scans / 扫描| G
     F -.->|scans / 扫描| C
 
     style B fill:#e74c3c,color:#fff
     style C fill:#3498db,color:#fff
     style A fill:#2ecc71,color:#fff
     style D fill:#f39c12,color:#fff
+    style G fill:#8e44ad,color:#fff
 ```
 
 ### Module Responsibility Boundaries / 模块职责边界
@@ -98,6 +102,7 @@ graph TD
 | `receiptLedger.js` | `packages/receipt-sdk` | Receipt creation & chain verification / 收据创建与链校验 | **Stateless / 无状态** — Caller manages storage / 调用方管理存储 |
 | `demoCli.js` | `apps/agent-core` | Orchestrate demo flow / 编排演示流程 | Has side effects — writes to filesystem / 有副作用 — 写入文件 |
 | `submissionAutopilot.js` | `apps/agent-core` | Generate submission bundle / 生成提交包 | Has side effects — reads & writes filesystem / 有副作用 — 读写文件 |
+| `onchainAnchor.js` | `apps/agent-core` | Anchor root and verify tx payload / root 锚定与交易载荷验证 | Has side effects — JSON-RPC network calls / 有副作用 — JSON-RPC 网络调用 |
 
 ---
 
@@ -250,7 +255,7 @@ Agent ──▶│  Guardrails Check      │ ← Trusted (code-enforced / 代�
 - Compute explainable trust scores / 计算可解释的信誉分数
 - Provide trust credentials for cross-system Agent identity / 为跨系统 Agent 身份提供信任凭证
 
-### P3: On-Chain Anchoring / 链上锚定
-- Periodically anchor receipt Merkle Root to testnet / 定期将收据 Merkle Root 锚定到测试网
-- Provide on-chain verification scripts / 提供链上验证脚本
-- Achieve decentralized receipt integrity proof / 实现去中心化的收据完整性证明
+### P3: On-Chain Anchoring (v1) / 链上锚定（v1）
+- Compute root from local receipt chain (`computeReceiptRoot`) / 从本地收据链计算 root
+- Encode root into EVM tx payload (`TRUSTSTACK_ROOT:` + 32-byte hex) / 将 root 编码进 EVM 交易载荷
+- Verify anchored root by comparing on-chain payload with local report / 对比链上载荷与本地报告完成验证
