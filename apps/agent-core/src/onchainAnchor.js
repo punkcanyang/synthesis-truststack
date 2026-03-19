@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Wallet, getAddress } from 'ethers';
 import { computeReceiptRoot } from '@truststack/receipt-sdk';
 
 /**
@@ -79,6 +80,20 @@ export function computeRootFromDemoReportPath(demoReportPath = defaultDemoReport
 }
 
 /**
+ * WHY: 地址统一归一化，避免大小写和非法地址导致的链上调用错误。
+ * @param {string} address
+ * @param {string} fieldName
+ * @returns {string}
+ */
+function normalizeAddress(address, fieldName) {
+  try {
+    return getAddress(address);
+  } catch {
+    throw new Error(`${fieldName} address is invalid`);
+  }
+}
+
+/**
  * WHY: 轻量 JSON-RPC 包装让测试可注入 fetch，同时集中错误处理。
  * @param {string} rpcUrl
  * @param {string} method
@@ -131,7 +146,8 @@ async function waitForReceipt(rpcUrl, txHash, fetchImpl, pollIntervalMs, timeout
  * @param {{
  *   demoReportPath?: string,
  *   rpcUrl: string,
- *   from: string,
+ *   from?: string,
+ *   privateKey?: string,
  *   to?: string,
  *   gas?: string,
  *   pollIntervalMs?: number,
@@ -144,6 +160,7 @@ export async function anchorRootFromDemoReport(options) {
     demoReportPath = defaultDemoReportPath,
     rpcUrl,
     from,
+    privateKey,
     to,
     gas = '0x186a0',
     pollIntervalMs = 1500,
@@ -152,26 +169,69 @@ export async function anchorRootFromDemoReport(options) {
   } = options || {};
 
   if (!rpcUrl) throw new Error('rpcUrl is required');
-  if (!from) throw new Error('from address is required');
 
   const root = computeRootFromDemoReportPath(demoReportPath);
   if (root === 'GENESIS') {
     throw new Error('cannot anchor empty receipt chain');
   }
+
   const data = buildAnchorData(root);
   const chainId = await rpcCall(rpcUrl, 'eth_chainId', [], fetchImpl);
-  const txHash = await rpcCall(
-    rpcUrl,
-    'eth_sendTransaction',
-    [{ from, to: to || from, value: '0x0', gas, data }],
-    fetchImpl
-  );
+  const chainIdNumber = Number(BigInt(chainId));
+
+  let txHash;
+  let sender;
+  let transport;
+
+  if (privateKey) {
+    const wallet = new Wallet(privateKey);
+    const walletAddress = normalizeAddress(wallet.address, 'wallet');
+    if (from) {
+      const normalizedFrom = normalizeAddress(from, 'from');
+      if (normalizedFrom !== walletAddress) {
+        throw new Error('from address does not match private key');
+      }
+    }
+
+    const toAddress = to ? normalizeAddress(to, 'to') : walletAddress;
+    const nonceHex = await rpcCall(rpcUrl, 'eth_getTransactionCount', [walletAddress, 'latest'], fetchImpl);
+    const gasPriceHex = await rpcCall(rpcUrl, 'eth_gasPrice', [], fetchImpl);
+    const signedTransaction = await wallet.signTransaction({
+      chainId: chainIdNumber,
+      nonce: Number(BigInt(nonceHex)),
+      to: toAddress,
+      value: 0n,
+      data,
+      gasLimit: BigInt(gas),
+      gasPrice: BigInt(gasPriceHex)
+    });
+
+    txHash = await rpcCall(rpcUrl, 'eth_sendRawTransaction', [signedTransaction], fetchImpl);
+    sender = walletAddress;
+    transport = 'raw';
+  } else {
+    if (!from) throw new Error('from address is required');
+    const fromAddress = normalizeAddress(from, 'from');
+    const toAddress = to ? normalizeAddress(to, 'to') : fromAddress;
+
+    txHash = await rpcCall(
+      rpcUrl,
+      'eth_sendTransaction',
+      [{ from: fromAddress, to: toAddress, value: '0x0', gas, data }],
+      fetchImpl
+    );
+    sender = fromAddress;
+    transport = 'unlocked';
+  }
+
   const receipt = await waitForReceipt(rpcUrl, txHash, fetchImpl, pollIntervalMs, timeoutMs);
 
   return {
     root,
     txHash,
     chainId,
+    from: sender,
+    transport,
     blockNumber: receipt?.blockNumber || null
   };
 }
@@ -216,7 +276,7 @@ function printUsage() {
   console.log('Usage:');
   console.log('  node apps/agent-core/src/onchainAnchor.js anchor');
   console.log('  node apps/agent-core/src/onchainAnchor.js verify');
-  console.log('Env for anchor: TRUSTSTACK_RPC_URL, TRUSTSTACK_ANCHOR_FROM');
+  console.log('Env for anchor: TRUSTSTACK_RPC_URL, TRUSTSTACK_ANCHOR_FROM (or TRUSTSTACK_ANCHOR_PRIVATE_KEY)');
   console.log('Env for verify: TRUSTSTACK_RPC_URL, TRUSTSTACK_ANCHOR_TX_HASH');
 }
 
@@ -233,10 +293,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   if (mode === 'anchor') {
     const from = process.env.TRUSTSTACK_ANCHOR_FROM;
+    const privateKey = process.env.TRUSTSTACK_ANCHOR_PRIVATE_KEY;
     const to = process.env.TRUSTSTACK_ANCHOR_TO;
     const gas = process.env.TRUSTSTACK_ANCHOR_GAS || '0x186a0';
 
-    anchorRootFromDemoReport({ demoReportPath, rpcUrl, from, to, gas })
+    anchorRootFromDemoReport({ demoReportPath, rpcUrl, from, privateKey, to, gas })
       .then(result => {
         console.log('=== TrustStack On-Chain Anchor ===');
         console.log(JSON.stringify(result, null, 2));
@@ -262,14 +323,17 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 /*
 [For Future AI]
 1. Key assumptions made:
-   - Use EVM JSON-RPC and eth_sendTransaction with unlocked sender for minimal dependency footprint.
+   - Preferred path: local private-key signing + eth_sendRawTransaction.
+   - Backward compatibility path: eth_sendTransaction with unlocked sender.
    - Anchor payload format is 0x + "TRUSTSTACK_ROOT:" hex tag + 32-byte root hex.
    - Local root is computed from demo-report receipts via computeReceiptRoot.
 2. Potential edge cases to watch:
+   - Private key mismatch with provided from address throws fast.
    - RPC endpoint may reject eth_sendTransaction when sender account is not unlocked.
    - Long confirmation latency can exceed timeout; caller should adjust timeoutMs.
    - Non-standard clients may expose tx input as data field instead of input.
 3. Dependencies on other modules:
+   - ethers (Wallet signing for raw transaction mode)
    - packages/receipt-sdk/src/receiptLedger.js (computeReceiptRoot)
    - docs/demo/demo-report.json produced by apps/agent-core/src/demoCli.js
 */

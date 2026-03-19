@@ -160,3 +160,76 @@ test('verifyAnchoredRoot returns mismatch when tx payload has different root', a
   assert.equal(result.expectedRoot, r2.hash);
   assert.equal(result.anchoredRoot, wrongRoot);
 });
+
+test('anchorRootFromDemoReport sends raw transaction when private key is provided', async () => {
+  const r1 = createReceipt('GENESIS', 'r1', 'spend', 'allowed', 'policy passed');
+  const r2 = createReceipt(r1.hash, 'r2', 'spend', 'executed', 'tx submitted');
+  const demoReportPath = createDemoReportFile([r1, r2]);
+  const calls = [];
+
+  const fetchImpl = async (_url, init) => {
+    const body = JSON.parse(init.body);
+    calls.push(body);
+
+    if (body.method === 'eth_chainId') {
+      return { ok: true, json: async () => ({ jsonrpc: '2.0', id: body.id, result: '0xaa36a7' }) };
+    }
+    if (body.method === 'eth_getTransactionCount') {
+      return { ok: true, json: async () => ({ jsonrpc: '2.0', id: body.id, result: '0x2' }) };
+    }
+    if (body.method === 'eth_gasPrice') {
+      return { ok: true, json: async () => ({ jsonrpc: '2.0', id: body.id, result: '0x3b9aca00' }) };
+    }
+    if (body.method === 'eth_sendRawTransaction') {
+      return { ok: true, json: async () => ({ jsonrpc: '2.0', id: body.id, result: '0xraw123' }) };
+    }
+    if (body.method === 'eth_getTransactionReceipt') {
+      return {
+        ok: true,
+        json: async () => ({
+          jsonrpc: '2.0',
+          id: body.id,
+          result: { transactionHash: '0xraw123', blockNumber: '0x33' }
+        })
+      };
+    }
+    throw new Error(`Unexpected RPC method: ${body.method}`);
+  };
+
+  const result = await anchorRootFromDemoReport({
+    demoReportPath,
+    rpcUrl: 'https://rpc.example',
+    privateKey: '0x59c6995e998f97a5a0044976f7d6db65e2de6c4e9ebf3f9f1d4b6e6f7f8a9b0c',
+    fetchImpl,
+    pollIntervalMs: 0,
+    timeoutMs: 1000
+  });
+
+  assert.equal(result.txHash, '0xraw123');
+  assert.equal(result.blockNumber, '0x33');
+  assert.equal(result.transport, 'raw');
+
+  const rawCall = calls.find(call => call.method === 'eth_sendRawTransaction');
+  assert.equal(typeof rawCall?.params?.[0], 'string');
+  assert.match(rawCall.params[0], /^0x[0-9a-f]+$/);
+
+  const unlockedCall = calls.find(call => call.method === 'eth_sendTransaction');
+  assert.equal(unlockedCall, undefined);
+});
+
+test('anchorRootFromDemoReport rejects mismatched from and private key address', async () => {
+  const r1 = createReceipt('GENESIS', 'r1', 'spend', 'allowed', 'policy passed');
+  const r2 = createReceipt(r1.hash, 'r2', 'spend', 'executed', 'tx submitted');
+  const demoReportPath = createDemoReportFile([r1, r2]);
+
+  await assert.rejects(
+    () => anchorRootFromDemoReport({
+      demoReportPath,
+      rpcUrl: 'https://rpc.example',
+      from: '0x1111111111111111111111111111111111111111',
+      privateKey: '0x59c6995e998f97a5a0044976f7d6db65e2de6c4e9ebf3f9f1d4b6e6f7f8a9b0c',
+      fetchImpl: async () => ({ ok: true, json: async () => ({ jsonrpc: '2.0', id: 1, result: '0x1' }) })
+    }),
+    /from address does not match private key/
+  );
+});

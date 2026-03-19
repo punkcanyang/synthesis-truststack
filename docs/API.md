@@ -268,7 +268,7 @@ Compute anchor root from a validated receipt chain (v1: use last receipt hash).
 
 **Module Path / 模块路径**: `apps/agent-core/src/onchainAnchor.js`
 
-### `anchorRootFromDemoReport(options) → Promise<{ root, txHash, chainId, blockNumber }>`
+### `anchorRootFromDemoReport(options) → Promise<{ root, txHash, chainId, from, transport, blockNumber }>`
 
 Read local demo report, compute receipt root, and anchor root into EVM transaction payload.
 
@@ -279,14 +279,20 @@ Read local demo report, compute receipt root, and anchor root into EVM transacti
 | Field / 字段 | Type / 类型 | Required / 必填 | Description / 说明 |
 |------|------|------|------|
 | `rpcUrl` | `string` | yes | JSON-RPC endpoint / JSON-RPC 节点地址 |
-| `from` | `string` | yes | Sender address for `eth_sendTransaction` / `eth_sendTransaction` 发送地址 |
+| `from` | `string` | conditional | Sender address for unlocked mode / unlocked 模式发送地址 |
+| `privateKey` | `string` | conditional | Local signing key for raw mode / raw 模式本地签名私钥 |
 | `demoReportPath` | `string` | no | Path to demo report / demo 报告路径 |
 | `to` | `string` | no | Receiver address (default: `from`) / 接收地址（默认同 `from`） |
 | `gas` | `string` | no | Hex gas value / 十六进制 gas 值 |
 | `timeoutMs` | `number` | no | Receipt wait timeout / 等待回执超时 |
 
+**Mode Rules / 模式规则**:
+- Provide `privateKey` → sign locally, then call `eth_sendRawTransaction` / 提供 `privateKey` 时走本地签名 + `eth_sendRawTransaction`
+- Provide `from` only → call `eth_sendTransaction` (RPC unlocked account) / 仅提供 `from` 时走 `eth_sendTransaction`（RPC 解锁账户）
+
 **Error Behavior / 异常行为**:
-- Missing `rpcUrl` or `from` → throws / 缺少关键参数抛异常
+- Missing `rpcUrl` or both `from` and `privateKey` → throws / 缺少关键参数抛异常
+- `from` and `privateKey` mismatch → throws `Error('from address does not match private key')` / 地址不匹配抛异常
 - Empty receipt chain → throws `Error('cannot anchor empty receipt chain')` / 空链不可锚定
 - RPC failure / timeout → throws / RPC 失败或超时抛异常
 

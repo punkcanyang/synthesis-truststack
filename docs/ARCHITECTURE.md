@@ -244,7 +244,7 @@ Agent ──▶│  Guardrails Check      │ ← Trusted (code-enforced / 代�
 | **Input Validation / 输入验证** | All public functions validate params; invalid inputs fail fast / 所有公开函数校验参数，无效输入快速失败 |
 | **Policy Enforcement / 策略强制** | Guardrails block unauthorized actions before execution / 护栏在执行前阻止越权操作 |
 | **Immutable Evidence / 不可变存证** | SHA-256 hash chain makes any tampering detectable / SHA-256 哈希链使任何篡改可被检测 |
-| **Zero Dependencies / 零第三方依赖** | All Node.js built-in modules, eliminates supply chain attack surface / 全部使用内置模块，消除供应链攻击面 |
+| **Minimal Dependencies / 最小依赖** | Core logic uses Node built-ins; `ethers` is scoped to EVM tx signing / 核心逻辑使用内置模块，`ethers` 仅用于 EVM 交易签名 |
 
 ---
 

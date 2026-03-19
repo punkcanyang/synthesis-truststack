@@ -16,5 +16,8 @@
     "anchor": "node apps/agent-core/src/onchainAnchor.js anchor",
     "verify-anchor": "node apps/agent-core/src/onchainAnchor.js verify",
     "check": "npm run lint && npm run test && npm run typecheck"
+  },
+  "dependencies": {
+    "ethers": "^6.16.0"
   }
 }

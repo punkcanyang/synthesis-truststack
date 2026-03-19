@@ -96,8 +96,14 @@ npm run bundle
 ### On-Chain Anchor (EVM) / 链上锚定（EVM）
 
 ```bash
-# 1) Anchor root to chain (requires unlocked sender account on RPC node)
-# 1) 将 root 写入链上（RPC 节点需支持已解锁账户）
+# 1) Recommended: local private-key signing + sendRawTransaction
+# 1) 推荐：本地私钥签名 + sendRawTransaction（不依赖 RPC 解锁账户）
+TRUSTSTACK_RPC_URL=https://your-testnet-rpc \
+TRUSTSTACK_ANCHOR_PRIVATE_KEY=0xyour_private_key \
+npm run anchor
+
+# 1-b) Backward-compatible: unlocked sender account on RPC node
+# 1-b) 兼容模式：RPC 节点已解锁账户
 TRUSTSTACK_RPC_URL=https://your-testnet-rpc \
 TRUSTSTACK_ANCHOR_FROM=0xYourSenderAddress \
 npm run anchor
@@ -176,10 +182,11 @@ synthesis-truststack/
 | **Node.js ESM** | Runtime / 运行时 | Native ES module support, no build step / 原生 ES 模块支持，无需构建 |
 | **node:test** | Testing / 测试 | Zero dependency, built into Node.js / 零依赖，内置于 Node.js |
 | **node:crypto** | Hashing / 哈希运算 | Provides SHA-256, no third-party lib needed / 提供 SHA-256，无需第三方库 |
+| **ethers** | EVM tx signing / EVM 交易签名 | Reliable local private-key signing for `eth_sendRawTransaction` / 提供可靠本地私钥签名能力 |
 | **JSDoc** | Type annotations / 类型标注 | No TS compile step, IDE still provides type hints / 无编译步骤，IDE 仍可提供类型提示 |
 | **npm workspaces** | Package management / 包管理 | Module isolation in monorepo / monorepo 下模块隔离 |
 
-> **Design Philosophy / 设计哲学**: Zero third-party dependencies. All Node.js built-in modules. / 零第三方依赖，全部使用 Node.js 内置模块。
+> **Design Philosophy / 设计哲学**: Keep dependencies minimal; core logic uses Node built-ins, and `ethers` is only used for safe EVM transaction signing. / 依赖最小化：核心逻辑优先使用 Node 内置模块，`ethers` 仅用于安全的 EVM 交易签名。
 
 ---
 
